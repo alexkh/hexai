@@ -34,6 +34,7 @@
 #include <random>
 #include <chrono>
 #include <cstdint> // uint32_t
+#include <sstream> // reading integer from string
 using namespace std;
 
 // Board does the Monte-Carlo simulations, its field is optimized for
@@ -132,47 +133,41 @@ public:
 			return;
 		}
 		// output top numbers
-		cout << "    ";
+		cout << "  ";
 		for(int j = 0; j < side; j++) {
-			if(j < 9) {
-				cout << (j + 1) << "   ";
-			} else {
-				cout << (j + 1) << "  ";
-			}
-		}
-		cout << endl;
-		cout << "   ";
-		// print the top /\/\/\/\/\ part
-		for(int j = 0; j < side; j++) {
-			cout << "/ \\ ";
+			cout << char('a' + j) << "  ";
 		}
 		cout << endl;
 		string pad; // spaces added for each new row
 		pad.reserve(side * 2);
 		for(int i = 0; i < side; i++) { // i stands for row here
 			cout << pad << setfill(' ') << setw(2) << (i + 1);
+			cout << ' ';
 			for(int j = 0; j < side; j++) {
-				cout << "| "; // << tile [i * side + j];
+				// << tile [i * side + j];
 				// i is row, j is col
 				if(blackrow[i] & uint32_t(1) << j) {
 					cout << 'X';
 				} else if(whitecol[j] & uint32_t(1) << i) {
 					cout << 'O';
 				} else {
+					cout << '.';
+				}
+				if(j != (side - 1)) {
+					cout << "  ";
+				} else {
 					cout << ' ';
 				}
-				cout << ' ';
 			}
-			cout << '|' << endl << pad << "   ";
-			for(int j = 0; j < side; j++) {
-				cout << "\\ / ";
-			}
-			if(i != (side - 1)) {
-				cout << "\\";
-			}
-			cout << endl;
-			pad.append("  ");
+			cout << setw(1) << (i + 1);
+			pad.append(" ");
+			cout << endl << pad;
 		}
+		cout << pad << "  ";
+		for(int j = 0; j < side; j++) {
+			cout << char('a' + j) << "  ";
+		}
+		cout << endl;
 	}
 	// checks a vector for connectedness whether it's black or white stones
 	bool is_connected(vector<uint32_t> &row) {
@@ -244,10 +239,10 @@ public:
 	}
 	// ai move, tricky part here is that since the whites are on top of
 	// our stone array and blacks are on bottom, playing for one color is
-	// slightly different than the other
-	void make_move() {
+	// slightly different than the other. Returns the move made
+	size_t make_move() {
 		if(!init_success) {
-			return;
+			return size; // return an invalid move to indicate error
 		}
 		// if the number of tiles on board is side-1 and more, before
 		// doing 1000 Monte-Carlo runs it makes sense to check if adding
@@ -257,6 +252,7 @@ public:
 		shuffle(cur0, cur1, *randengine);
 		uint32_t a;
 		int i;
+		size_t max; // move with maximum value
 		if(whites_move) {
 			// do a monte-carlo simulation
 			vector<size_t> moves(cur0, cur1); // we must copy
@@ -264,7 +260,6 @@ public:
 				// we'll lose track of which one have been
 				// checked
 			vector<int> tile(size); // display values for debugging
-			size_t max; // move with maximum value
 			size_t win_count; // count number of wins for white
 			size_t max_count = 0; // wins on the best move
 			for(auto it = moves.begin(); it != moves.end(); ++it) {
@@ -288,6 +283,7 @@ public:
 				tile[*it] = win_count;
 			}
 			// draw the table - for debugging
+/*
 			cout << "White move values:\n";
 			for(int j = 0; j < size; j++) {
 				if(!(j % side)) {
@@ -296,6 +292,7 @@ public:
 				cout << '\t' << tile[j];
 			}
 			cout << '\n';
+*/
 			// make the best move
 			auto it = find(cur0, cur1, max);
 			*it = *cur0;
@@ -312,7 +309,6 @@ public:
 				// we'll lose track of which one have been
 				// checked
 			vector<int> tile(size); // display values for debugging
-			size_t max; // move with maximum value
 			size_t win_count; // count number of wins for black
 			size_t max_count = 0; // wins on the best move
 			for(auto it = moves.begin(); it != moves.end(); ++it) {
@@ -336,7 +332,7 @@ public:
 				tile[*it] = win_count;
 			}
 			// draw the table - for debugging
-			cout << "Black move values:\n";
+/*			cout << "Black move values:\n";
 			for(int j = 0; j < size; j++) {
 				if(!(j % side)) {
 					cout << '\n';
@@ -344,6 +340,7 @@ public:
 				cout << '\t' << tile[j];
 			}
 			cout << '\n';
+*/
 			// make the best move
 			auto it = find(cur0, cur1 + 1, max);
 			*it = *cur1;
@@ -352,6 +349,7 @@ public:
 			blackrow[(*cur1) / side] |=
 				uint32_t(1) << ((*cur1) % side);
 		}
+		return max;
 	}
 	// human move
 	int try_move(unsigned char row, unsigned char col) {
@@ -360,6 +358,7 @@ public:
 		}
 		// check bounds
 		if(row > side || col > side) {
+			cout << (int)col << " error " << (int)row << endl;
 			return -1; // error: one of the values is out of bounds
 		}
 		// check if this tile is empty
@@ -446,10 +445,161 @@ public:
 			cout << "Congratulations to the white player!" << endl;
 		}
 	}
+
+	int autoplay(char color, unsigned short board_side = 11,
+				size_t iter = 1000) {
+		nshuffles = iter; // nshuffles is the number of iterations
+		char column; // letter representing board column from a-z
+		unsigned short col; // numeric column
+		unsigned short row; // numeric row
+		char c; // used for input processing
+		size_t move; // result of calling make_move()
+		// send handshake message color: name of program by author
+		// this string should uniquely identify the player
+		cout << color << ": hexai by Alexandre Kharlamov\n" << flush;
+		if(color == 'X') {
+			// wait for other player's handshake message
+			cin >> c; // should be the other player's color
+			if(c != 'O') {
+				cout << "X. E: expecting handshake message "
+					"from O\n" << flush;
+				return -2;
+			}
+			cin >> c; // should be ':'
+			if(c != ':') {
+				cout << "X. E: expecting : after O in "
+					"handshake message\n" << flush;
+				return -3;
+			}
+			// ignore the rest of the line
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			// start the timer
+			auto start = std::chrono::steady_clock::now();
+			// make a move
+			move = make_move();
+						// stop the timer
+			auto end = std::chrono::steady_clock::now();
+			int tmilli = std::chrono::duration<double, std::milli>
+				(end - start).count();
+			cout << color << char((move % side) + 'a') <<
+				(move / side + 1) << " #1 t=" <<
+				tmilli << "ms\n" << flush;
+			whites_move = true;
+		}
+		int counter = 1; // count the moves
+		while(winner == ' ' && cur0 != cur1) {
+			cin >> c; // other player color
+			cin >> column; // lower case letter represenging column
+			if(c != (color=='O'?'X':'O') || column == ':') {
+				cin.clear();
+				cin.ignore(numeric_limits<streamsize>::max(),
+					'\n');
+				continue;
+			}
+			if(column == '.') { // the other player quits, game over
+				break;
+			}
+			col = column - 'a';
+			if(col >= board_side) {
+				cout << color <<  ". E: " << color <<
+				" received illegal column: '" << c << "'\n";
+				return -4;
+			}
+			cin >> row;
+			if(row > board_side) {
+				cout << color << ". E: " << color <<
+				" received illegal row: '" << row << "'\n";
+				return -5;
+			}
+			c = cin.peek();
+			if(c == '.') { // dot at the end of the other player's
+				// move means that he wins,
+				// or maybe he gives up - game over
+				break;
+			}
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			// start the timer
+			auto start = std::chrono::steady_clock::now();
+			// register the opponent's move
+			int err = try_move(row - 1, col);
+			if(err) {
+				cout << color << ". E: " << " received illegal "
+					<< "move " << column << row << " " <<
+					err << '\n';
+				return -6;
+			}
+			// check if game is over
+			check_game_over(); // sets the winner variable if needed
+			if(winner != ' ') {
+				break;
+			}
+			// toggle current player
+			whites_move = whites_move? false: true;
+			if(color == 'X') {
+				++counter;
+			}
+			// make a move. If I won, add a dot and exit.
+			move = make_move();
+			// check if game is over
+			check_game_over(); // sets the winner variable if needed
+			// stop the timer
+			auto end = std::chrono::steady_clock::now();
+			int tmilli = std::chrono::duration<double, std::milli>
+				(end - start).count();
+			cout << color << char((move % side) + 'a') <<
+				(move / side + 1) <<
+				(winner != ' '? '.': ' ') << '#' << counter
+				<< " t=" << tmilli << "ms\n" << flush;
+			if(winner != ' ') {
+				break;
+			}
+			// toggle current player
+			whites_move = whites_move? false: true;
+			if(color == 'O') {
+				++counter;
+			}
+		}
+		return 0;
+	}
 };
 
-main() {
-	// first, select board size
+// usage: <program name> (X|O) [<board side>] [<iterations>]
+// example: hex X 11 1000
+main(int argc, char *argv[]) {
+	char color = 'X'; // can be X or O
+	unsigned short board_side = 11; // side of the board minimum 3
+	size_t iter = 1000; // number of iterations should be selectable
+	// parse command line parameters
+	argc = argc > 4? 4: argc; // forward compatibility measure
+	switch(argc) {
+	case 4:
+	{
+		stringstream ss; // used for reading numbers from strings
+		ss << argv[3]; // put third argument into the stringstream
+		ss >> iter; // read its numeric value
+	}
+	case 3:
+	{
+		stringstream ss;
+		ss << argv[2];
+		ss >> board_side;
+		board_side = board_side < 3? 3: board_side; // minimum 3
+	}
+	case 2:
+		color = argv[1][0];
+		if(color != 'X' && color != 'O') {
+			cerr << "E: first argument must be X or O\n";
+			return -1; // there is some error
+		}
+		{
+			Board board(board_side, color == 'X', color == 'O');
+			board.autoplay(color, board_side, iter);
+			return 0;
+		}
+	case 1: ; // no command line arguments - continue with interactive play
+	}
 	while(true) {
 		unsigned short side, p1ai, p2ai;
 		cout << "Board side: ";
@@ -460,7 +610,7 @@ main() {
 		cin >> p2ai;
 		Board board(side, p1ai, p2ai);
 		board.print();
-		board.print_stones();
+		//board.print_stones();
 		board.play();
 		break;
 	}

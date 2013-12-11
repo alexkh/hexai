@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Simple hex game arbiter
+if test -z "$3"
+then
+echo "Usage: $0 <player1> <player2> <logfile> [iter1] [iter2]"
+echo "Example: $0 ./player1 ./player2 log.txt 1000 1000"
+exit
+fi
+
+if test -z "$4"
+then
+$4=1000
+fi
+
+if test -z "$5"
+then
+$5=1000
+fi
+
+exec 3>> $3
+
+echo "Match $1 X@$4 vs $2 O@$5 on $(date)" >&3
+
+declare -a p1
+coproc p1 {
+    exec $2 O 11 $5 | tee -a >(cat - >&3)
+}
+
+$1 X 11 $4 <&${p1[0]} > >(tee -a >(cat - >&3) >&${p1[1]})
+
+# wait for the coprocess to finish too.
+wait $p1_PID
+
+echo "Ended on $(date)" >&3
+echo "" >&3

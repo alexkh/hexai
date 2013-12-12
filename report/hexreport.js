@@ -98,7 +98,7 @@ function Hexreport(data) {
 					+ '\t' + my.match[i].time_ms[j] + '\n');
 			} else {
 				if(j == (my.match[i].move.length - 1)) {
-					match.lpre.append('\t\t' +
+					match.lpre.append('\t\t\t' +
 					my.match[i].time_ms[j] +
 					'\n');
 				} else if(my.match[i].move[j].length == 3) {

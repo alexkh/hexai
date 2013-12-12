@@ -24,9 +24,6 @@ function Hexreport(data) {
 		var yoff = 20;
 		var R = Raphael(div[0]);
 		R.setViewBox(0, 0, 5000, 5000);
-		var circle = R.circle(50, 40, 10);
-		circle.attr("fill", "#f00");
-		circle.attr("stroke", "#ff0");
 		// draw the hexagons
 		for(var i = 0; i < board_side; ++i) {
 			xoff += (0.5 * hw);
@@ -87,14 +84,24 @@ function Hexreport(data) {
 		my.div.append(match.board);
 		my.div.append(match.list);
 		my.div.append(match.separator);
-		match.lpre.append(' X   O\n');
+		match.lpre.append('#    X   O\t\ttime X\ttime O \n');
 		for(var j in my.match[i].move) {
 			var move = my.match[i].move[j];
+			if(!(j % 2)) {
+				mn = Math.floor(j / 2) + 1;
+				match.lpre.append(mn + '. ' + (mn > 9?'': ' '));
+			}
 			match.lpre.append(move);
 			if(j %2) {
-				match.lpre.append('\n');
+				match.lpre.append('\t\t' +
+					my.match[i].time_ms[j - 1]
+					+ '\t' + my.match[i].time_ms[j] + '\n');
 			} else {
-				if(my.match[i].move[j].length == 3) {
+				if(j == (my.match[i].move.length - 1)) {
+					match.lpre.append('\t\t' +
+					my.match[i].time_ms[j] +
+					'\n');
+				} else if(my.match[i].move[j].length == 3) {
 					match.lpre.append(' ');
 				} else {
 					match.lpre.append('  ');

@@ -734,6 +734,8 @@ main(int argc, char *argv[]) {
 	cout << "X wins: " << x_wins << " O wins: " << o_wins << endl;
 	// generate report
 	ofile << "<html><head>\n"
+		"<meta http-equiv=\"Content-Type\" "
+		"content=\"text/html; charset=utf-8\">"
 		"<script type=\"text/javascript\" src=\"jquery.js\"></script>"
 		"<script type=\"text/javascript\" src=\"raphael.js\"></script>"
 		"<script type=\"text/javascript\" src=\"hexreport.js\">"

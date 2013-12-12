@@ -611,7 +611,7 @@ public:
 			// parse the move
 			stringstream ss(line);
 			string s, s1, s2, s3;
-			ss >> s1, s2, s3;
+			ss >> s1 >> s2 >> s3;
 			if(s1.size() < 3) {
 				break;
 			}
@@ -630,8 +630,8 @@ public:
 				ss.str(s);
 				ss.clear();
 				ss >> mv.time_ms;
-			} else if(s3.size() && s2[0] == 't' && s2[1] == '=') {
-				s = s2.substr(2);
+			} else if(s3.size() && s3[0] == 't' && s3[1] == '=') {
+				s = s3.substr(2);
 				ss.str(s);
 				ss.clear();
 				ss >> mv.time_ms;
@@ -643,28 +643,23 @@ public:
 			if(int e = try_move(mv.row, mv.col)) {
 				switch(e) {
 				case -1:
-					cout << "Error: out of bounds. "
-						<< "Try again" << endl;
+				//	cout << "Error: out of bounds. "
+				//		<< "Try again" << endl;
 					continue;
 				case -2:
-					cout << "Error: tile is filled."
-						<< " Try again" << endl;
+				//	cout << "Error: tile is filled."
+				//		<< " Try again" << endl;
 					continue;
 				default:
 					cout << "Fatal error" << endl;
 					exit(e);
 				}
 			}
-			print();
+			//print();
 			check_game_over();
 			whites_move = whites_move? false: true;
 			if(winner != ' ') {
 				m.winner = winner;
-				if(winner == 'X') {
-					cout << "Congratulations to the black player!" << endl;
-				} else {
-					cout << "Congratulations to the white player!" << endl;
-				}
 				break;
 			}
 		}
@@ -731,7 +726,8 @@ main(int argc, char *argv[]) {
 		}
 		match.push_back(m);
 	}
-	cout << "X wins: " << x_wins << " O wins: " << o_wins << endl;
+	cout << "X wins: " << x_wins << " O wins: " << o_wins <<
+		" Unfinished: " << match.size() - x_wins - o_wins << endl;
 	// generate report
 	ofile << "<!DOCTYPE html><html><head>\n"
 		"<meta http-equiv=\"Content-Type\" "
@@ -757,12 +753,19 @@ main(int argc, char *argv[]) {
 				ofile << "\"" << char(mv.col + 'a') <<
 					(mv.row + 1) << "\", ";
 			}
-		ofile << " ] ";
-		ofile << " },\n";
+		ofile << " ],\n";
+		ofile << "\"time_ms\": [ ";
+			for(auto mv : ma.move) {
+				ofile << "\"" << mv.time_ms << "\", ";
+			}
+		ofile << " ] },\n";
 	}
 	ofile << " ] ";
 	// closing tags
 	ofile << " }\nvar hexreport = new Hexreport(data); }\n</script></head>"
-		"\n<body><div id=\"reportbody\"></div></body></html>\n";
+		"\n<body>" << "Total games: " << match.size() << " Black wins: "
+		<< x_wins << " White wins: " << o_wins << " Unfinished: " <<
+		(match.size() - x_wins - o_wins) << "<br /><br />" <<
+		"<div id=\"reportbody\"></div></body></html>\n";
 	return 0;
 }

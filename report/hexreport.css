@@ -2,7 +2,7 @@
 	float: right;
 	width: 500px;
 	height: 330px;
-	overflow: auto;
+	overflow: hidden;
 }
 .separator {
 	clear: both;

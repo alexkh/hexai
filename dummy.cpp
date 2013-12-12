@@ -6,6 +6,7 @@
 #include <limits> // streamsize
 #include <locale> // isalpha
 #include <unistd.h> // sleep() - simulates ai's thinking process
+#include <chrono>
 using namespace std;
 
 int autoplay(char color, unsigned short board_side = 11, size_t iter = 1000) {
@@ -13,9 +14,11 @@ int autoplay(char color, unsigned short board_side = 11, size_t iter = 1000) {
 	unsigned short col; // numeric column
 	unsigned short row; // numeric row
 	char c; // used for input processing
+	bool game_over = false; // each player's responsibility to check winner
 	// send handshake message color: name of program by author
 	// this string should uniquely identify the player
-	cout << color << ": dummy player by Alexandre Kharlamov\n" << flush;
+	cout << color << ": dummy player v.0.2 by Alexandre Kharlamov "
+			"https://github.com/alexkh/hexai\n" << flush;
 	if(color == 'X') {
 		// wait for other player's handshake message
 		cin >> c; // should be the other player's color
@@ -33,8 +36,15 @@ int autoplay(char color, unsigned short board_side = 11, size_t iter = 1000) {
 		// ignore the rest of the line
 		cin.clear();
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		// start the timer
+		auto start = std::chrono::steady_clock::now();
 		// make a move
-		cout << color << "a2 #1\n" << flush;
+		sleep(1);
+		// stop the timer
+		auto end = std::chrono::steady_clock::now();
+		int tmilli = std::chrono::duration<double, std::milli>
+			(end - start).count();
+		cout << color << "a2 #1 t=" << tmilli << "ms\n" << flush;
 	}
 	int counter = 1; // count the moves
 	while(true) {
@@ -67,15 +77,29 @@ int autoplay(char color, unsigned short board_side = 11, size_t iter = 1000) {
 		}
 		cin.clear();
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		// start the timer
+		auto start = std::chrono::steady_clock::now();
 		if(color == 'X') {
 			++counter;
 		}
+		// register opponent's move
+		// check if game is over
+		if(counter > 5) { game_over = true; }; // dummy code exits
+							// after 5 moves
+		if(game_over) {
+			break;
+		}
 		// make a move. If I won, add a dot. dummy exits after 3 moves.
 		sleep(1);
-		if(counter < 3) {
-			cout << color << "a3 #" << counter << "\n" << flush;
-		} else {
-			cout << color << "a3.#" << counter << "\n" << flush;
+		// check if game is over
+		if(counter >= 5) { game_over = true; }; // dummy code simplified
+		// stop the timer
+		auto end = std::chrono::steady_clock::now();
+		int tmilli = std::chrono::duration<double, std::milli>
+			(end - start).count();
+		cout << color << "b3" << (game_over? '.': ' ') << '#' << counter
+			<< " t=" << tmilli << "ms\n" << flush;
+		if(game_over) {
 			break;
 		}
 		if(color == 'O') {
@@ -120,4 +144,3 @@ int main(int argc, char *argv[]) {
 	// optional interactive play code goes here
 	return 0;
 }
-

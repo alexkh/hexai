@@ -3,10 +3,9 @@ hexai
 
 Hex Game AI implementation C++
 
-K, right now it's a messy hax-up of stuff, but the basic functinality is there
-and you can see an example of report produced by analyze.cpp at:
-
-https://wizstaff.com/hex/report.html
+Warning: this code is faulty. Don't use it! It was speed-coded to try some
+ideas while taking Ira Pohl's C++ online course, but there is a major flaw
+in the chosen approach, which is not fixable without a major code rewrite.
 
 Just run ./buildall on a Linux system with bash shell to build all programs.
 
